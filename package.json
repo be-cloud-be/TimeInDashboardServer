@@ -1,0 +1,26 @@
+{
+  "name": "timeindashboardserver",
+  "version": "0.0.1",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "mssql": "^4.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/be-cloud-be/TimeInDashboardServer.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/be-cloud-be/TimeInDashboardServer/issues"
+  },
+  "homepage": "https://github.com/be-cloud-be/TimeInDashboardServer#readme"
+}
