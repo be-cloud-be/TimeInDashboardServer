@@ -7,4 +7,4 @@ RUN npm install --quiet
 
 COPY . .
 
-RUN node server.js
+CMD node server.js
