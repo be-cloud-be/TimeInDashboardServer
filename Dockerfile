@@ -7,4 +7,6 @@ RUN npm install --quiet
 
 COPY . .
 
+EXPOSE 4201/tcp
+
 CMD ["node","server.js"]
