@@ -118,6 +118,32 @@ app.get('/month_details', function (req, res) {
     }
 })
 
+app.get('/month_employee_details', function (req, res) {
+    var month = req.query.month;
+    var chantier = req.query.chantier;
+    var activite = req.query.activite;
+    console.log(month + ' - ' + chantier + ' - ' + activite);
+    return app.pool.request()
+        .input('Month', sql.VarChar(10), month)
+        .input('Chantier', sql.VarChar(50), chantier)
+        .input('Activite', sql.VarChar(50), activite)
+        .query(`SELECT employe_code
+                      ,employe
+                	  ,SUM([hours]) AS Heures
+                  FROM [ODS].[dbo].[HeuresOuvrierProj]
+                  WHERE [type] = 'ANW' AND FORMAT(date,'yyyy-MM') = @Month
+                  AND [Chantier] = @Chantier AND [Activite] = @Activite
+                  GROUP BY employe_code, employe`)
+        .then(result => {
+            result.recordset.forEach(line => {
+                line.Heures= Number(line.Heures.toFixed(2))
+            });
+            res.send(result.recordset);
+        }).catch(err => {
+            res.send(err);
+        })
+})
+
 app.get('/employees', function (req, res) {
     return app.pool.request()
         .query(`SELECT employe_code, employe
