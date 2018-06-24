@@ -122,26 +122,67 @@ app.get('/month_employee_details', function (req, res) {
     var month = req.query.month;
     var chantier = req.query.chantier;
     var activite = req.query.activite;
-    console.log(month + ' - ' + chantier + ' - ' + activite);
-    return app.pool.request()
-        .input('Month', sql.VarChar(10), month)
-        .input('Chantier', sql.VarChar(50), chantier)
-        .input('Activite', sql.VarChar(50), activite)
-        .query(`SELECT employe_code
-                      ,employe
-                	  ,SUM([hours]) AS Heures
-                  FROM [ODS].[dbo].[HeuresOuvrierProj]
-                  WHERE [type] = 'ANW' AND FORMAT(date,'yyyy-MM') = @Month
-                  AND [Chantier] = @Chantier AND [Activite] = @Activite
-                  GROUP BY employe_code, employe`)
-        .then(result => {
-            result.recordset.forEach(line => {
-                line.Heures= Number(line.Heures.toFixed(2))
-            });
-            res.send(result.recordset);
-        }).catch(err => {
-            res.send(err);
-        })
+    if (month != 'all') {
+        return app.pool.request()
+            .input('Month', sql.VarChar(10), month)
+            .input('Chantier', sql.VarChar(50), chantier)
+            .input('Activite', sql.VarChar(50), activite)
+            .query(`SELECT employe_code
+                          ,employe
+                    	  ,SUM([hours]) AS Heures
+                      FROM [ODS].[dbo].[HeuresOuvrierProj]
+                      WHERE [type] = 'ANW' AND FORMAT(date,'yyyy-MM') = @Month
+                      AND [Chantier] = @Chantier AND [Activite] = @Activite
+                      GROUP BY employe_code, employe`)
+            .then(result => {
+                result.recordset.forEach(line => {
+                    line.Heures= Number(line.Heures.toFixed(2))
+                });
+                res.send(result.recordset);
+            }).catch(err => {
+                res.send(err);
+            })
+    } else {
+        if(activite != 'null') {
+            return app.pool.request()
+                .input('Chantier', sql.VarChar(50), chantier)
+                .input('Activite', sql.VarChar(50), activite)
+                .query(`SELECT employe_code
+                              ,employe
+                        	  ,SUM([hours]) AS Heures
+                          FROM [ODS].[dbo].[HeuresOuvrierProj]
+                          WHERE [type] = 'ANW'
+                          AND [Chantier] = @Chantier AND [Activite] = @Activite
+                          GROUP BY employe_code, employe`)
+                .then(result => {
+                    result.recordset.forEach(line => {
+                        line.Heures= Number(line.Heures.toFixed(2))
+                    });
+                    res.send(result.recordset);
+                }).catch(err => {
+                    res.send(err);
+                })
+        } else {
+            return app.pool.request()
+                .input('Chantier', sql.VarChar(50), chantier)
+                .input('Activite', sql.VarChar(50), activite)
+                .query(`SELECT employe_code
+                              ,employe
+                        	  ,SUM([hours]) AS Heures
+                          FROM [ODS].[dbo].[HeuresOuvrierProj]
+                          WHERE [type] = 'ANW'
+                          AND [Chantier] = @Chantier AND [Activite] IS NULL
+                          GROUP BY employe_code, employe`)
+                .then(result => {
+                    result.recordset.forEach(line => {
+                        line.Heures= Number(line.Heures.toFixed(2))
+                    });
+                    res.send(result.recordset);
+                }).catch(err => {
+                    res.send(err);
+                })
+        }
+    }
 })
 
 app.get('/employees', function (req, res) {
@@ -154,6 +195,36 @@ app.get('/employees', function (req, res) {
         }).catch(err => {
             res.send(err);
         })
+})
+
+app.get('/chantiers', function (req, res) {
+    return app.pool.request()
+        .query(`SELECT DISTINCT [Chantier]
+                  FROM [ODS].[dbo].[HeuresOuvrierProj]`)
+        .then(result => {
+            res.send(result.recordset);
+        }).catch(err => {
+            res.send(err);
+        })
+})
+
+app.get('/chantier_activites', function (req, res) {
+    var chantier = req.query.chantier;
+    return app.pool.request()
+    .input('Chantier', sql.VarChar(50), chantier)
+    .query(`SELECT [Activite]
+            	  ,SUM([hours]) AS Heures
+              FROM [ODS].[dbo].[HeuresOuvrierProj]
+              WHERE [type] = 'ANW' AND [Chantier] = @Chantier
+              GROUP BY [Activite]`)
+    .then(result => {
+        result.recordset.forEach(line => {
+            line.Heures= Number(line.Heures.toFixed(2))
+        });
+        res.send(result.recordset);
+    }).catch(err => {
+        res.send(err);
+    })
 })
 
 app.listen(4201, function () {
