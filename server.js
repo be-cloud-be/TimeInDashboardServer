@@ -83,12 +83,12 @@ app.get('/month_details', function (req, res) {
     if(code=='all') {
         return app.pool.request()
             .input('Month', sql.VarChar(10), month)
-            .query(`SELECT [Chantier]
-                          ,[Activite]
+            .query(`SELECT [ChantierCode],[Chantier]
+                          ,[ActiviteCode],[Activite]
                     	  ,SUM([hours]) AS Heures
                       FROM [ODS].[dbo].[HeuresOuvrierProj]
                       WHERE [type] = 'ANW' AND FORMAT(date,'yyyy-MM') = @Month
-                      GROUP BY [Chantier] ,[Activite]`)
+                      GROUP BY [ChantierCode],[Chantier] ,[ActiviteCode],[Activite]`)
             .then(result => {
                 result.recordset.forEach(line => {
                     line.Heures= Number(line.Heures.toFixed(2))
@@ -101,12 +101,12 @@ app.get('/month_details', function (req, res) {
         return app.pool.request()
             .input('Month', sql.VarChar(10), month)
             .input('Code', sql.VarChar(10), code)
-            .query(`SELECT [Chantier]
-                          ,[Activite]
+            .query(`SELECT [ChantierCode],[Chantier]
+                          ,[ActiviteCode],[Activite]
                     	  ,SUM([hours]) AS Heures
                       FROM [ODS].[dbo].[HeuresOuvrierProj]
                       WHERE [type] = 'ANW' AND [employe_code] LIKE @Code AND FORMAT(date,'yyyy-MM') = @Month
-                      GROUP BY [Chantier] ,[Activite]`)
+                      GROUP BY [ChantierCode],[Chantier] ,[ActiviteCode],[Activite]`)
             .then(result => {
                 result.recordset.forEach(line => {
                     line.Heures= Number(line.Heures.toFixed(2))
@@ -199,8 +199,23 @@ app.get('/employees', function (req, res) {
 
 app.get('/chantiers', function (req, res) {
     return app.pool.request()
-        .query(`SELECT DISTINCT [Chantier]
-                  FROM [ODS].[dbo].[HeuresOuvrierProj]`)
+        .query(`SELECT [ChantierCode], [Chantier]
+                  FROM [ODS].[dbo].[HeuresOuvrierProj]
+                  GROUP BY [ChantierCode],[Chantier]
+                  ORDER BY [ChantierCode]`)
+        .then(result => {
+            res.send(result.recordset);
+        }).catch(err => {
+            res.send(err);
+        })
+})
+
+app.get('/activites', function (req, res) {
+    return app.pool.request()
+        .query(`SELECT [ActiviteCode], [Activite]
+                  FROM [ODS].[dbo].[HeuresOuvrierProj]
+                  GROUP BY [ActiviteCode], [Activite]
+                  ORDER BY [ActiviteCode]`)
         .then(result => {
             res.send(result.recordset);
         }).catch(err => {
@@ -212,16 +227,42 @@ app.get('/chantier_activites', function (req, res) {
     var chantier = req.query.chantier;
     return app.pool.request()
     .input('Chantier', sql.VarChar(50), chantier)
-    .query(`SELECT [Activite]
+    .query(`SELECT [ActiviteCode], [Activite]
             	  ,SUM([hours]) AS Heures
               FROM [ODS].[dbo].[HeuresOuvrierProj]
               WHERE [type] = 'ANW' AND [Chantier] = @Chantier
-              GROUP BY [Activite]`)
+              GROUP BY [ActiviteCode], [Activite]`)
     .then(result => {
         result.recordset.forEach(line => {
             line.Heures= Number(line.Heures.toFixed(2))
         });
         res.send(result.recordset);
+    }).catch(err => {
+        res.send(err);
+    })
+})
+
+app.patch('/change_chantier', function (req, res) {
+    var month = req.query.month;
+    var employe_code = req.query.employe_code;
+    var activite_code = req.query.activite_code;
+    var from_code = req.query.from_code;
+    var to_code = req.query.to_code;
+    return app.pool.request()
+    .input('Month', sql.VarChar(50), month)
+    .input('EmployeeCode', sql.VarChar(50), employe_code)
+    .input('ActivieCode', sql.VarChar(50), activite_code)
+    .input('FromCode', sql.VarChar(50), from_code)
+    .input('ToCode', sql.VarChar(50), to_code)
+    .query(`UPDATE [dbo].[HeuresOuvrierProj] 
+                SET ChantierCode = @ToCode 
+                WHERE 
+                    employe_code = @EmployeeCode AND 
+                    FORMAT(date, 'yyyy-MM') = @Month AND 
+                    ChantierCode = @FromCode AND 
+                    ActiviteCode = @ActivieCode`)
+    .then(result => {
+        res.send(result);
     }).catch(err => {
         res.send(err);
     })
