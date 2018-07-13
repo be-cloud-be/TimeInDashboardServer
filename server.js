@@ -268,6 +268,32 @@ app.patch('/change_chantier', function (req, res) {
     })
 })
 
+app.patch('/change_activite', function (req, res) {
+    var month = req.query.month;
+    var employe_code = req.query.employe_code;
+    var chantier_code = req.query.chantier_code;
+    var from_code = req.query.from_code;
+    var to_code = req.query.to_code;
+    return app.pool.request()
+    .input('Month', sql.VarChar(50), month)
+    .input('EmployeeCode', sql.VarChar(50), employe_code)
+    .input('ChantierCode', sql.VarChar(50), chantier_code)
+    .input('FromCode', sql.VarChar(50), from_code)
+    .input('ToCode', sql.VarChar(50), to_code)
+    .query(`UPDATE [dbo].[HeuresOuvrierProj] 
+                SET ActiviteCode = @ToCode 
+                WHERE 
+                    employe_code = @EmployeeCode AND 
+                    FORMAT(date, 'yyyy-MM') = @Month AND 
+                    ChantierCode = @ChantierCode AND 
+                    ActiviteCode = @FromCode`)
+    .then(result => {
+        res.send(result);
+    }).catch(err => {
+        res.send(err);
+    })
+})
+
 app.listen(4201, function () {
   console.log('TimeInDashboard server listening on port 4201!')
 })
