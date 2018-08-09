@@ -7,6 +7,9 @@ env:
   - secure: cV4NB/ptnCreKX0WZhrQrJdcAIPi2cogO4OMzEAQG8Xzg8PnD9U/YXCNTgMfV9KHcug8JUhomFHI/6w4DZVSw19ZxcD00gxSUKiPwn9a+gd5gwP6EwKXtYVI/z9glr6NTvwwRtPZBbiOQIgh31xcEA3AgqESJ7bIC7xXMvPzPtsE2Y3rNPo0aO3Eja9HMWpdqsYAOqIWY/1TAD4r21EE2/y6PCDefgeDXMZ7ABFivMK72q3vgxaPLpRWbIXru9f+LvvyLwc9EnBgOJqcfa/8tBR+QvHJMjPcJ+0tp9x9lPDmmmvtBKptQGQKYwdX6teJanm7OBdMkXqvWpzzpqBxSjexIQTBYeOhUD7Ty+0jL3aeRHBlnrK6LE4V57Sg8L49+rZdymKso909MO5zU5Lw9AKCDDrKilzc9ZIGDOz39F01RtWnY0qxQVAmQySPNpcQ1HWaY5dR830dmIHloHfSxZztZnbsNH3kSDHQcQCcGzZn3uJFxwmwvuTnzqy2hK7CsxzyqwNhTFNIdOSrobsNJ/ElK9pXTQmkkMd1PoeKZ2CuVVbjlE2LCPisSIVlwiJmxbPSyyiqc7qXLAZB2nw6/R+oMR2cis02XuI2l+BK77NLFCu5r/fVNHrGpkZA6DeHMZDvG8XCq2pVGpBOEKVw6WAffKKpBA66O42ZcmBRYLM= #DOCKER_PASS
   - COMMIT=${TRAVIS_COMMIT::8}
   
+before_install:
+  - npm install -g npm-check
+
 after_success:
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=be-cloud-be/TimeInDashboardServer
