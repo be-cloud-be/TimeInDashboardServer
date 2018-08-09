@@ -1,4 +1,6 @@
 language: node_js
+node_js:
+  - "8.7"
 sudo: false
 env:
   global:
@@ -6,10 +8,8 @@ env:
   - secure: XJOHFTNrXskA+btbA4WfO2Sc98bngczA+g2N/WU25c1cnp3ACirnMTEH9zHRIAjXB1Oc/OcwV18acma5b+tDUpYMJmsATQPmVuyhsFQKlaHuAX9/s+1akuBIq0ri3uXmONVaW3inMr0vnllEP9tyYDWolEPE5Jzb663f6Y1xqVyaXF8a4bBAKL4NROfDDX2tsgXCuboYL6SqWG8rrnWo99QXhlyre3etadzdkbvpx4gjQnRELRkUtijzAotS32AUe908rWkmTzXjx7yo9dOZF8ETMhiOKam70tM9Vs9gqVTO2t+lJAfNjdzdC5gOQaNQdHs4VM/ID4YXEFz0CsiFWR09RIVf4JqBfFksKMNE6WvurHpGbSSXrD3S5ocmS0iJGCbEAcPICigMVYcP+ZvQybLJeyUc/O/VhN7hfS38CCFC0RxD1gK3bhZunxZ9r8NLml5L5oJmh+SF0qQtXytV0bzSlLZUCH5R+Xa2WAFNzMvdOQDKItV4FZquKBK8sw6Mox/4O+hvG+mxyD0nKIZttxWc6tDeua8k2Ym/n3aI7/u+i+SS2d37SI8rwp8QwZ/ev5MVo2/mEMuwdpnrt2vnyAtYUjQngtu7d8my8nEhNcbXJtJTxLBXJ1BppyOpapJftw0uWsNEAvWjOhz3h5pYyu3q6Cq9wtO6Qt1C59rqzv0= #DOCKER_USER
   - secure: cV4NB/ptnCreKX0WZhrQrJdcAIPi2cogO4OMzEAQG8Xzg8PnD9U/YXCNTgMfV9KHcug8JUhomFHI/6w4DZVSw19ZxcD00gxSUKiPwn9a+gd5gwP6EwKXtYVI/z9glr6NTvwwRtPZBbiOQIgh31xcEA3AgqESJ7bIC7xXMvPzPtsE2Y3rNPo0aO3Eja9HMWpdqsYAOqIWY/1TAD4r21EE2/y6PCDefgeDXMZ7ABFivMK72q3vgxaPLpRWbIXru9f+LvvyLwc9EnBgOJqcfa/8tBR+QvHJMjPcJ+0tp9x9lPDmmmvtBKptQGQKYwdX6teJanm7OBdMkXqvWpzzpqBxSjexIQTBYeOhUD7Ty+0jL3aeRHBlnrK6LE4V57Sg8L49+rZdymKso909MO5zU5Lw9AKCDDrKilzc9ZIGDOz39F01RtWnY0qxQVAmQySPNpcQ1HWaY5dR830dmIHloHfSxZztZnbsNH3kSDHQcQCcGzZn3uJFxwmwvuTnzqy2hK7CsxzyqwNhTFNIdOSrobsNJ/ElK9pXTQmkkMd1PoeKZ2CuVVbjlE2LCPisSIVlwiJmxbPSyyiqc7qXLAZB2nw6/R+oMR2cis02XuI2l+BK77NLFCu5r/fVNHrGpkZA6DeHMZDvG8XCq2pVGpBOEKVw6WAffKKpBA66O42ZcmBRYLM= #DOCKER_PASS
   - COMMIT=${TRAVIS_COMMIT::8}
-  
 before_install:
   - npm install -g npm-check
-
 after_success:
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=be-cloud-be/TimeInDashboardServer
