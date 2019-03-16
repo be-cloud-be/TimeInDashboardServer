@@ -21,7 +21,7 @@ sql.connect(config).then(
     pool => {
         app.pool = pool;
     });
-    
+
 app.get('/dashboard_month_hours_summary', function (req, res) {
     var month = req.query.month;
     return app.pool.request()
@@ -53,12 +53,12 @@ app.get('/dashboard_month_hours_summary', function (req, res) {
             res.send(err);
         })
 })
-    
+
 app.get('/month_summary', function (req, res) {
     var month = req.query.month;
     return app.pool.request()
         .input('Month', sql.VarChar(10), month)
-        .query(`SELECT * 
+        .query(`SELECT *
                     FROM [ODS].[dbo].[HeuresOuvrierMonthSum]
                     WHERE Mois = @Month`)
         .then(result => {
@@ -254,12 +254,12 @@ app.patch('/change_chantier', function (req, res) {
     .input('ActivieCode', sql.VarChar(50), activite_code)
     .input('FromCode', sql.VarChar(50), from_code)
     .input('ToCode', sql.VarChar(50), to_code)
-    .query(`UPDATE [dbo].[HeuresOuvrierProj] 
-                SET ChantierCode = @ToCode 
-                WHERE 
-                    employe_code = @EmployeeCode AND 
-                    FORMAT(date, 'yyyy-MM') = @Month AND 
-                    ChantierCode = @FromCode AND 
+    .query(`UPDATE [dbo].[HeuresOuvrierProj]
+                SET ChantierCode = @ToCode
+                WHERE
+                    employe_code = @EmployeeCode AND
+                    FORMAT(date, 'yyyy-MM') = @Month AND
+                    ChantierCode = @FromCode AND
                     ActiviteCode = @ActivieCode`)
     .then(result => {
         res.send(result);
@@ -274,24 +274,44 @@ app.patch('/change_activite', function (req, res) {
     var chantier_code = req.query.chantier_code;
     var from_code = req.query.from_code;
     var to_code = req.query.to_code;
-    return app.pool.request()
-    .input('Month', sql.VarChar(50), month)
-    .input('EmployeeCode', sql.VarChar(50), employe_code)
-    .input('ChantierCode', sql.VarChar(50), chantier_code)
-    .input('FromCode', sql.VarChar(50), from_code)
-    .input('ToCode', sql.VarChar(50), to_code)
-    .query(`UPDATE [dbo].[HeuresOuvrierProj] 
-                SET ActiviteCode = @ToCode 
-                WHERE 
-                    employe_code = @EmployeeCode AND 
-                    FORMAT(date, 'yyyy-MM') = @Month AND 
-                    ChantierCode = @ChantierCode AND 
-                    ActiviteCode = @FromCode`)
-    .then(result => {
-        res.send(result);
-    }).catch(err => {
-        res.send(err);
-    })
+    if (month != 'all') {
+      return app.pool.request()
+      .input('Month', sql.VarChar(50), month)
+      .input('EmployeeCode', sql.VarChar(50), employe_code)
+      .input('ChantierCode', sql.VarChar(50), chantier_code)
+      .input('FromCode', sql.VarChar(50), from_code)
+      .input('ToCode', sql.VarChar(50), to_code)
+      .query(`UPDATE [dbo].[HeuresOuvrierProj]
+                  SET ActiviteCode = @ToCode
+                  WHERE
+                      employe_code = @EmployeeCode AND
+                      FORMAT(date, 'yyyy-MM') = @Month AND
+                      ChantierCode = @ChantierCode AND
+                      ActiviteCode = @FromCode`)
+      .then(result => {
+          res.send(result);
+      }).catch(err => {
+          res.send(err);
+      })
+    } else {
+      return app.pool.request()
+      .input('Month', sql.VarChar(50), month)
+      .input('EmployeeCode', sql.VarChar(50), employe_code)
+      .input('ChantierCode', sql.VarChar(50), chantier_code)
+      .input('FromCode', sql.VarChar(50), from_code)
+      .input('ToCode', sql.VarChar(50), to_code)
+      .query(`UPDATE [dbo].[HeuresOuvrierProj]
+                  SET ActiviteCode = @ToCode
+                  WHERE
+                      employe_code = @EmployeeCode AND
+                      ChantierCode = @ChantierCode AND
+                      ActiviteCode = @FromCode`)
+      .then(result => {
+          res.send(result);
+      }).catch(err => {
+          res.send(err);
+      })
+    }
 })
 
 app.listen(4201, function () {
