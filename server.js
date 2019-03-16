@@ -311,7 +311,7 @@ app.patch('/change_activite', function (req, res) {
       }).catch(err => {
           res.send(err);
       })
-    }
+    } 
 })
 
 app.listen(4201, function () {
