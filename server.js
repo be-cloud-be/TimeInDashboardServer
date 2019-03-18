@@ -25,7 +25,7 @@ sql.connect(config).then(
 app.get('/dashboard_month_hours_summary', function (req, res) {
     var month = req.query.month;
     return app.pool.request()
-        .query(`SELECT TOP 10
+        .query(`SELECT * FROM (SELECT TOP 8
                       [Mois]
                       ,SUM([Heures]) AS [Heures]
                       ,SUM([HeuresSupp]) AS [HeuresSupp]
@@ -35,9 +35,9 @@ app.get('/dashboard_month_hours_summary', function (req, res) {
                       ,SUM([Conge]) AS [Conge]
                       ,SUM([TotalHours]) AS [TotalHours]
                   FROM [ODS].[dbo].[HeuresOuvrierMonthSum]
-                  WHERE [Mois] < ('2018-09')
+                  WHERE [Mois] > FORMAT(DATEADD(MONTH, -8, GETDATE()),'yyyy-MM') AND [Mois] <= FORMAT(GETDATE(),'yyyy-MM')
                   GROUP BY [Mois]
-                  ORDER BY [Mois] ASC`)
+                  ORDER BY [Mois] DESC) p ORDER BY p.Mois ASC`)
         .then(result => {
             result.recordset.forEach(line => {
                 line.Heures= Number(line.Heures.toFixed(2))
