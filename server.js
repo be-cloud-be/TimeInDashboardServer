@@ -242,6 +242,25 @@ app.get('/chantier_activites', function (req, res) {
     })
 })
 
+app.get('/chantier_employes', function (req, res) {
+    var chantier = req.query.chantier;
+    return app.pool.request()
+    .input('Chantier', sql.VarChar(50), chantier)
+    .query(`SELECT employe_code AS EmployeCode, employe as [Employe]
+            	  ,SUM([hours]) AS Heures
+              FROM [ODS].[dbo].[HeuresOuvrierProj]
+              WHERE [type] = 'ANW' AND [Chantier] = 'BACK PETANGE'
+              GROUP BY employe_code, employe`)
+    .then(result => {
+        result.recordset.forEach(line => {
+            line.Heures= Number(line.Heures.toFixed(2))
+        });
+        res.send(result.recordset);
+    }).catch(err => {
+        res.send(err);
+    })
+})
+
 app.patch('/change_chantier', function (req, res) {
     var month = req.query.month;
     var employe_code = req.query.employe_code;
