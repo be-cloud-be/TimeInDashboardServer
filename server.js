@@ -188,8 +188,8 @@ app.get('/month_employee_details', function (req, res) {
 app.get('/employees', function (req, res) {
     return app.pool.request()
         .query(`SELECT employe_code, employe
-                  FROM [ODS].[dbo].[HeuresOuvrierProj]
-                  GROUP BY employe_code, employe`)
+                  FROM [ODS].[OuvriersActifs]
+                  ORDER BY employe_code`)
         .then(result => {
             res.send(result.recordset);
         }).catch(err => {
@@ -202,7 +202,7 @@ app.get('/chantiers', function (req, res) {
         .query(`SELECT [ChantierCode], [Chantier]
                   FROM [ODS].[dbo].[HeuresOuvrierProj]
                   GROUP BY [ChantierCode],[Chantier]
-                  ORDER BY [ChantierCode]`)
+                  ORDER BY [Chantier]`)
         .then(result => {
             res.send(result.recordset);
         }).catch(err => {
