@@ -188,7 +188,7 @@ app.get('/month_employee_details', function (req, res) {
 app.get('/employees', function (req, res) {
     return app.pool.request()
         .query(`SELECT employe_code, employe
-                  FROM [ODS].[OuvriersActifs]
+                  FROM [ODS].[dbo].[OuvriersActifs]
                   ORDER BY employe_code`)
         .then(result => {
             res.send(result.recordset);
