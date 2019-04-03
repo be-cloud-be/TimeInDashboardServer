@@ -34,10 +34,6 @@ jobs:
           command: docker load -i /tmp/workspace/image.tar
       - run:
           context: DockerHub
-          name: Echo env
-          command: echo $ENVAR
-      - run:
-          context: DockerHub
           name: Publish Docker Image to Docker Hub
           command: |
             echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
