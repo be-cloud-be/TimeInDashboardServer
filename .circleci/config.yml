@@ -35,7 +35,7 @@ jobs:
       - run:
           context: DockerHub
           name: Echo env
-          command: echo "This is username : $DOCKERHUB_USERNAME"
+          command: echo $ENVAR
       - run:
           context: DockerHub
           name: Publish Docker Image to Docker Hub
