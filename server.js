@@ -267,24 +267,44 @@ app.patch('/change_chantier', function (req, res) {
     var activite_code = req.query.activite_code;
     var from_code = req.query.from_code;
     var to_code = req.query.to_code;
-    return app.pool.request()
-    .input('Month', sql.VarChar(50), month)
-    .input('EmployeeCode', sql.VarChar(50), employe_code)
-    .input('ActivieCode', sql.VarChar(50), activite_code)
-    .input('FromCode', sql.VarChar(50), from_code)
-    .input('ToCode', sql.VarChar(50), to_code)
-    .query(`UPDATE [dbo].[HeuresOuvrierProj]
-                SET ChantierCode = @ToCode
-                WHERE
-                    employe_code = @EmployeeCode AND
-                    FORMAT(date, 'yyyy-MM') = @Month AND
-                    ChantierCode = @FromCode AND
-                    ActiviteCode = @ActivieCode`)
-    .then(result => {
-        res.send(result);
-    }).catch(err => {
-        res.send(err);
-    })
+    if (month != 'all') {
+        return app.pool.request()
+        .input('Month', sql.VarChar(50), month)
+        .input('EmployeeCode', sql.VarChar(50), employe_code)
+        .input('ActivieCode', sql.VarChar(50), activite_code)
+        .input('FromCode', sql.VarChar(50), from_code)
+        .input('ToCode', sql.VarChar(50), to_code)
+        .query(`UPDATE [dbo].[HeuresOuvrierProj]
+                    SET ChantierCode = @ToCode
+                    WHERE
+                        employe_code = @EmployeeCode AND
+                        FORMAT(date, 'yyyy-MM') = @Month AND
+                        ChantierCode = @FromCode AND
+                        ActiviteCode = @ActivieCode`)
+        .then(result => {
+            res.send(result);
+        }).catch(err => {
+            res.send(err);
+        })
+    } else {
+        return app.pool.request()
+        .input('Month', sql.VarChar(50), month)
+        .input('EmployeeCode', sql.VarChar(50), employe_code)
+        .input('ActivieCode', sql.VarChar(50), activite_code)
+        .input('FromCode', sql.VarChar(50), from_code)
+        .input('ToCode', sql.VarChar(50), to_code)
+        .query(`UPDATE [dbo].[HeuresOuvrierProj]
+                    SET ChantierCode = @ToCode
+                    WHERE
+                        employe_code = @EmployeeCode AND
+                        ChantierCode = @FromCode AND
+                        ActiviteCode = @ActivieCode`)
+        .then(result => {
+            res.send(result);
+        }).catch(err => {
+            res.send(err);
+        })
+    } 
 })
 
 app.patch('/change_activite', function (req, res) {
