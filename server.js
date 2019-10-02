@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const sql = require('mssql');
+const cron = require('node-cron');
 
 sql.on('error', err => {
     console.log(err);
@@ -21,6 +22,19 @@ sql.connect(config).then(
     pool => {
         app.pool = pool;
     });
+
+cron.schedule('* 0,30 * * *', () => {
+    console.log('Rebuild ODS every 30 minutes');
+    return app.pool.request().execute('loadBookInAnalytic', (err, result) => {
+        console.log(result.returnValue) // procedure return value
+    })
+});
+
+app.get('/rebuild_ods', function (req, res) {
+    return app.pool.request().execute('loadBookInAnalytic', (err, result) => {
+        res.send(result.returnValue); // procedure return value
+    })
+});
 
 app.get('/dashboard_month_hours_summary', function (req, res) {
     var month = req.query.month;
@@ -311,7 +325,7 @@ app.patch('/change_activite', function (req, res) {
       }).catch(err => {
           res.send(err);
       })
-    } 
+    }
 })
 
 app.listen(4201, function () {
