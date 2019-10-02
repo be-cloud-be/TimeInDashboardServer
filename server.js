@@ -16,6 +16,8 @@ const config = {
         password: 'socoma',
         server: '192.168.1.110\\INTEC', // You can use 'localhost\\instance' to connect to named instance
         database: 'ODS',
+        connectionTimeout: 300000,
+        requestTimeout: 300000,
 }
 
 sql.connect(config).then(
