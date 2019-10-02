@@ -25,15 +25,23 @@ sql.connect(config).then(
 
 cron.schedule('* */30 * * *', () => {
     console.log('Rebuild ODS every 30 minutes');
-    return app.pool.request().execute('loadBookInAnalytic', (err, result) => {
-        console.log(result.returnValue) // procedure return value
-    })
+    return app.pool.request().execute('loadBookInAnalytic')
+        .then(result => {
+            res.send(result.returnValue);
+        })
+        .catch(err => {
+            res.send(err);
+        })
 });
 
 app.get('/rebuild_ods', function (req, res) {
-    return app.pool.request().execute('loadBookInAnalytic', (err, result) => {
-        res.send(result.returnValue); // procedure return value
-    })
+    return app.pool.request().execute('loadBookInAnalytic')
+        .then(result => {
+            res.send(result.returnValue);
+        })
+        .catch(err => {
+            res.send(err);
+        })
 });
 
 app.get('/dashboard_month_hours_summary', function (req, res) {
