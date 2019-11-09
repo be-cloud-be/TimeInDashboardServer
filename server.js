@@ -29,10 +29,11 @@ cron.schedule('30 * * * *', () => {
     console.log('Rebuild ODS every 30 minutes');
     return app.pool.request().execute('loadBookInAnalytic')
         .then(result => {
-            res.send(result.returnValue);
+            console.log('Rebuild ODS succeeded');
         })
         .catch(err => {
-            res.send(err);
+            console.log('Rebuild ODS failed');
+            console.log(err);
         })
 });
 
