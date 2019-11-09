@@ -25,8 +25,8 @@ sql.connect(config).then(
         app.pool = pool;
     });
 
-cron.schedule('30 * * * *', () => {
-    console.log('Rebuild ODS every 30 minutes');
+cron.schedule('0 5 * * *', () => {
+    console.log('Rebuild ODS every day');
     return app.pool.request().execute('loadBookInAnalytic')
         .then(result => {
             console.log('Rebuild ODS succeeded');
