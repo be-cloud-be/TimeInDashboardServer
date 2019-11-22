@@ -22,6 +22,35 @@ sql.connect(config).then(
         app.pool = pool;
     });
 
+app.get('/invoice_number', function (req, res) {
+    var fournisseur = req.query.fournisseur;
+    var chantier = req.query.chantier;
+    var numero = '%' + req.query.numero + '%';
+    var fromDate = req.query.fromDate;
+    var toDate = req.query.toDate;
+    var includeConfirmed = req.query.includeConfirmed;
+    return app.pool.request()
+        .input('Number', sql.VarChar(10), numero)
+        .query(`SELECT TOP 10 
+                  u.TBew_Nr AS Number
+                  FROM [WinBF1_001].[dbo].[vBew] u
+                  WHERE 
+                	u.TBew_Nr LIKE @Number AND
+                	--u.TBew_DatDok > FromDate AND
+                	--u.TBew_DatDok < ToDate AND
+                	--"Fournisseur": string,
+                	--"Chantier": string,
+                	--IncludeConfirmed": boolean,
+                	TBew_Peri > '201901' AND 
+                	TBew_First = 1 AND 
+                	Tjrl_Cod = 'E01'`)
+        .then(result => {
+            res.send(result.recordset);
+        }).catch(err => {
+            res.send(err);
+        })
+})
+
 app.get('/dashboard_month_hours_summary', function (req, res) {
     var month = req.query.month;
     return app.pool.request()
