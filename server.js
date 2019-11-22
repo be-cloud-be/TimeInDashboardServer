@@ -25,6 +25,28 @@ sql.connect(config).then(
         app.pool = pool;
     });
 
+cron.schedule('0 5 * * *', () => {
+    console.log('Rebuild ODS every day');
+    return app.pool.request().execute('loadBookInAnalytic')
+        .then(result => {
+            console.log('Rebuild ODS succeeded');
+        })
+        .catch(err => {
+            console.log('Rebuild ODS failed');
+            console.log(err);
+        })
+});
+
+app.get('/rebuild_ods', function (req, res) {
+    return app.pool.request().execute('loadBookInAnalytic')
+        .then(result => {
+            res.send(result.returnValue);
+        })
+        .catch(err => {
+            res.send(err);
+        })
+});
+
 app.get('/invoice_number', function (req, res) {
     var fournisseur = req.query.fournisseur;
     var chantier = req.query.chantier;
