@@ -25,7 +25,6 @@ sql.connect(config).then(
         app.pool = pool;
     });
 
-<<<<<<< HEAD
 app.get('/invoice_number', function (req, res) {
     var fournisseur = req.query.fournisseur;
     var chantier = req.query.chantier;
@@ -54,29 +53,6 @@ app.get('/invoice_number', function (req, res) {
             res.send(err);
         })
 })
-=======
-cron.schedule('0 5 * * *', () => {
-    console.log('Rebuild ODS every day');
-    return app.pool.request().execute('loadBookInAnalytic')
-        .then(result => {
-            console.log('Rebuild ODS succeeded');
-        })
-        .catch(err => {
-            console.log('Rebuild ODS failed');
-            console.log(err);
-        })
-});
-
-app.get('/rebuild_ods', function (req, res) {
-    return app.pool.request().execute('loadBookInAnalytic')
-        .then(result => {
-            res.send(result.returnValue);
-        })
-        .catch(err => {
-            res.send(err);
-        })
-});
->>>>>>> 18b5a556364e411370ab2d2377769d1ae309cbd0
 
 app.get('/dashboard_month_hours_summary', function (req, res) {
     var month = req.query.month;
