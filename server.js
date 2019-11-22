@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const sql = require('mssql');
+const cron = require('node-cron');
 
 sql.on('error', err => {
     console.log(err);
@@ -15,6 +16,8 @@ const config = {
         password: 'socoma',
         server: '192.168.1.110\\INTEC', // You can use 'localhost\\instance' to connect to named instance
         database: 'ODS',
+        connectionTimeout: 300000,
+        requestTimeout: 300000,
 }
 
 sql.connect(config).then(
@@ -22,6 +25,7 @@ sql.connect(config).then(
         app.pool = pool;
     });
 
+<<<<<<< HEAD
 app.get('/invoice_number', function (req, res) {
     var fournisseur = req.query.fournisseur;
     var chantier = req.query.chantier;
@@ -50,6 +54,29 @@ app.get('/invoice_number', function (req, res) {
             res.send(err);
         })
 })
+=======
+cron.schedule('0 5 * * *', () => {
+    console.log('Rebuild ODS every day');
+    return app.pool.request().execute('loadBookInAnalytic')
+        .then(result => {
+            console.log('Rebuild ODS succeeded');
+        })
+        .catch(err => {
+            console.log('Rebuild ODS failed');
+            console.log(err);
+        })
+});
+
+app.get('/rebuild_ods', function (req, res) {
+    return app.pool.request().execute('loadBookInAnalytic')
+        .then(result => {
+            res.send(result.returnValue);
+        })
+        .catch(err => {
+            res.send(err);
+        })
+});
+>>>>>>> 18b5a556364e411370ab2d2377769d1ae309cbd0
 
 app.get('/dashboard_month_hours_summary', function (req, res) {
     var month = req.query.month;
@@ -296,24 +323,44 @@ app.patch('/change_chantier', function (req, res) {
     var activite_code = req.query.activite_code;
     var from_code = req.query.from_code;
     var to_code = req.query.to_code;
-    return app.pool.request()
-    .input('Month', sql.VarChar(50), month)
-    .input('EmployeeCode', sql.VarChar(50), employe_code)
-    .input('ActivieCode', sql.VarChar(50), activite_code)
-    .input('FromCode', sql.VarChar(50), from_code)
-    .input('ToCode', sql.VarChar(50), to_code)
-    .query(`UPDATE [dbo].[HeuresOuvrierProj]
-                SET ChantierCode = @ToCode
-                WHERE
-                    employe_code = @EmployeeCode AND
-                    FORMAT(date, 'yyyy-MM') = @Month AND
-                    ChantierCode = @FromCode AND
-                    ActiviteCode = @ActivieCode`)
-    .then(result => {
-        res.send(result);
-    }).catch(err => {
-        res.send(err);
-    })
+    if (month != 'all') {
+        return app.pool.request()
+        .input('Month', sql.VarChar(50), month)
+        .input('EmployeeCode', sql.VarChar(50), employe_code)
+        .input('ActivieCode', sql.VarChar(50), activite_code)
+        .input('FromCode', sql.VarChar(50), from_code)
+        .input('ToCode', sql.VarChar(50), to_code)
+        .query(`UPDATE [dbo].[HeuresOuvrierProj]
+                    SET ChantierCode = @ToCode
+                    WHERE
+                        employe_code = @EmployeeCode AND
+                        FORMAT(date, 'yyyy-MM') = @Month AND
+                        ChantierCode = @FromCode AND
+                        ActiviteCode = @ActivieCode`)
+        .then(result => {
+            res.send(result);
+        }).catch(err => {
+            res.send(err);
+        })
+    } else {
+        return app.pool.request()
+        .input('Month', sql.VarChar(50), month)
+        .input('EmployeeCode', sql.VarChar(50), employe_code)
+        .input('ActivieCode', sql.VarChar(50), activite_code)
+        .input('FromCode', sql.VarChar(50), from_code)
+        .input('ToCode', sql.VarChar(50), to_code)
+        .query(`UPDATE [dbo].[HeuresOuvrierProj]
+                    SET ChantierCode = @ToCode
+                    WHERE
+                        employe_code = @EmployeeCode AND
+                        ChantierCode = @FromCode AND
+                        ActiviteCode = @ActivieCode`)
+        .then(result => {
+            res.send(result);
+        }).catch(err => {
+            res.send(err);
+        })
+    } 
 })
 
 app.patch('/change_activite', function (req, res) {
@@ -359,7 +406,7 @@ app.patch('/change_activite', function (req, res) {
       }).catch(err => {
           res.send(err);
       })
-    } 
+    }
 })
 
 app.listen(4201, function () {
