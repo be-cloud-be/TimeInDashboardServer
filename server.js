@@ -54,11 +54,12 @@ app.get('/invoice_number', function (req, res) {
     var fromDate = req.query.fromDate;
     var toDate = req.query.toDate;
     var includeConfirmed = req.query.includeConfirmed;
+    var company = req.company;
     return app.pool.request()
         .input('Number', sql.VarChar(10), numero)
         .query(`SELECT TOP 10 
                   u.TBew_Nr AS Number
-                  FROM [WinBF1_001].[dbo].[vBew] u
+                  FROM [WinBF1_%s].[dbo].[vBew] u
                   WHERE 
                 	u.TBew_Nr LIKE @Number AND
                 	--u.TBew_DatDok > FromDate AND
@@ -68,7 +69,7 @@ app.get('/invoice_number', function (req, res) {
                 	--IncludeConfirmed": boolean,
                 	TBew_Peri > '201901' AND 
                 	TBew_First = 1 AND 
-                	Tjrl_Cod = 'E01'`)
+                	Tjrl_Cod = 'E01'` % company)
         .then(result => {
             res.send(result.recordset);
         }).catch(err => {
