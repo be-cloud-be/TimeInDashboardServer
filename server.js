@@ -173,6 +173,47 @@ app.get('/month_details', function (req, res) {
     }
 })
 
+app.get('/year_details', function (req, res) {
+    var year = req.query.year;
+    var code = req.query.code;
+    if(code=='all') {
+        return app.pool.request()
+            .input('Year', sql.VarChar(10), year)
+            .query(`SELECT [ChantierCode],[Chantier]
+                          ,[ActiviteCode],[Activite]
+                    	  ,SUM([hours]) AS Heures
+                      FROM [ODS].[dbo].[HeuresOuvrierProj]
+                      WHERE [type] = 'ANW' AND FORMAT(date,'yyyy') = @Year
+                      GROUP BY [ChantierCode],[Chantier] ,[ActiviteCode],[Activite]`)
+            .then(result => {
+                result.recordset.forEach(line => {
+                    line.Heures= Number(line.Heures.toFixed(2))
+                });
+                res.send(result.recordset);
+            }).catch(err => {
+                res.send(err);
+            })
+    } else {
+        return app.pool.request()
+            .input('Year', sql.VarChar(10), year)
+            .input('Code', sql.VarChar(10), code)
+            .query(`SELECT [ChantierCode],[Chantier]
+                          ,[ActiviteCode],[Activite]
+                    	  ,SUM([hours]) AS Heures
+                      FROM [ODS].[dbo].[HeuresOuvrierProj]
+                      WHERE [type] = 'ANW' AND [employe_code] LIKE @Code AND FORMAT(date,'yyyy') = @Year
+                      GROUP BY [ChantierCode],[Chantier] ,[ActiviteCode],[Activite]`)
+            .then(result => {
+                result.recordset.forEach(line => {
+                    line.Heures= Number(line.Heures.toFixed(2))
+                });
+                res.send(result.recordset);
+            }).catch(err => {
+                res.send(err);
+            })
+    }
+})
+
 app.get('/month_employee_details', function (req, res) {
     var month = req.query.month;
     var chantier = req.query.chantier;
