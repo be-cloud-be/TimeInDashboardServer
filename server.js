@@ -121,6 +121,25 @@ app.get('/invoice_pdfs', function (req, res) {
         })
 })
 
+app.patch('/invoice_change_chantier', function (req, res) {
+    var company = req.query.company;
+    var journal = req.query.journal;
+    var numero = req.query.numero;
+    var chantier_code = req.query.chantier_code;
+    return app.pool.request()
+        .input('Company', sql.VarChar(10), company)
+        .input('Journal', sql.VarChar(10), journal)
+        .input('Number', sql.VarChar(10), numero)
+        .input('ChantierCode', sql.VarChar(50), chantier_code)
+        .query(`UPDATE [WinBF1_`+company+`].[dbo].[vBew] SET TAna_Cod1 = @ChantierCode 
+                    WHERE TJrl_Cod = @Journal AND TBew_Nr = @Number AND TAna_Cod1 IS NOT NULL`)
+        .then(result => {
+          res.send(result);
+        }).catch(err => {
+          res.send(err);
+        })
+})
+
 app.get('/dashboard_month_hours_summary', function (req, res) {
     var month = req.query.month;
     return app.pool.request()
