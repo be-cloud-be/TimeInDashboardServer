@@ -1,4 +1,5 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const sql = require('mssql');
 const cron = require('node-cron');
 
@@ -7,6 +8,9 @@ sql.on('error', err => {
 })
 
 const app = express()
+
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 
 const config = {
         user: 'socoma',
