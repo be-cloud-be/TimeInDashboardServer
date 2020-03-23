@@ -1,5 +1,5 @@
 const express = require('express');
-const cors = require('cors');
+const bodyParser = require('body-parser');
 const sql = require('mssql');
 const cron = require('node-cron');
 
@@ -9,7 +9,8 @@ sql.on('error', err => {
 
 const app = express()
 
-app.use(cors())
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 
 const config = {
         user: 'socoma',
@@ -47,33 +48,188 @@ app.get('/rebuild_ods', function (req, res) {
         })
 });
 
-app.get('/invoice_number', function (req, res) {
-    var fournisseur = req.query.fournisseur;
+app.get('/budget', function (req, res) {
     var chantier = req.query.chantier;
-    var numero = '%' + req.query.numero + '%';
-    var fromDate = req.query.fromDate;
-    var toDate = req.query.toDate;
-    var includeConfirmed = req.query.includeConfirmed;
-    var company = req.company;
     return app.pool.request()
+    .input('Chantier', sql.VarChar(50), chantier)
+    .query(`SELECT l.[PK_BUDGET_LINE] AS Id
+                    ,l.[PK_CLIENT] AS ClientCode
+                	  ,c.Client
+                      ,l.[PK_ACTIVITE] AS ActiviteCode
+                	  ,ac.Activite
+                	  ,d.date AS Date
+                      ,l.[ORIGINE] AS Origine
+                      ,l.[QUANTITE] As Quantite
+                      ,l.[MONTANT] As Montant
+                  FROM [ODS].[dbo].[Budget_Analitic_Line] l
+                  LEFT OUTER JOIN [dbo].[Dim_Dates] d ON l.[PK_DATE] = d.[PK_DATE]
+                  LEFT OUTER JOIN [dbo].[Dim_Activites] ac ON l.[PK_ACTIVITE] = ac.[PK_ACTIVITE]
+                  LEFT OUTER JOIN [dbo].[Dim_Clients] c ON l.[PK_CLIENT] = c.[PK_CLIENT]
+              WHERE l.[PK_CLIENT] = @Chantier`)
+    .then(result => {
+        res.send(result.recordset);
+    }).catch(err => {
+        res.send(err);
+    })
+})
+
+app.post('/add_budget_line', function (req, res) {
+    var body = JSON.parse(req.body);
+    return app.pool.request()
+    .input('Chantier', sql.Numeric(18,0), body.Chantier)
+    .input('Activite', sql.Numeric(18,0), body.Activite)
+    .input('Origine', sql.VarChar(50), body.Origine)
+    .input('Date', sql.DateTime, body.Date)
+    .input('Montant', sql.Float, body.Montant)
+    .input('Quantite', sql.Float, body.Quantite)
+    .query(`INSERT INTO [dbo].[Budget_Analitic_Line]
+           ([PK_CLIENT]
+           ,[PK_ACTIVITE]
+           ,[PK_DATE]
+           ,[ORIGINE]
+           ,[QUANTITE]
+           ,[MONTANT])
+           VALUES
+                 (@Chantier
+                 ,@Activite
+                 ,SELECT PK_DATE FROM [dbo].[Dim_Dates] WHERE DAY = DAY(@Date) AND MONTH = MONTH(@Date) AND YEAR = YEAR(@Date)
+                 ,@Origine
+                 ,@Quantite
+                 ,@Montant`)
+    .then(result => {
+        res.send(result.recordset);
+    }).catch(err => {
+        res.send(err);
+    })
+})
+
+app.get('/invoice_activites', function (req, res) {
+    return app.pool.request()
+        .query(`SELECT [TAna_Cod] AS ActiviteCode
+                ,[TAna_Bez3] AS Activite
+                FROM [WinBF1_001].[dbo].[TAna] WHERE [TAna_DisabledYN] = 0 AND TAna_Typ = 2`)
+      .then(result => {
+          res.send(result.recordset);
+      }).catch(err => {
+          res.send(err);
+      })
+})
+
+app.get('/invoice_number', function (req, res) {
+    var company = req.query.company;
+    var journal = req.query.journal;
+    var numero = '%' + req.query.numero + '%';
+    return app.pool.request()
+        .input('Company', sql.VarChar(10), company)
+        .input('Journal', sql.VarChar(10), journal)
         .input('Number', sql.VarChar(10), numero)
-        .query(`SELECT TOP 10 
+        .query(`SELECT TOP 10
                   u.TBew_Nr AS Number
-                  FROM [WinBF1_%s].[dbo].[vBew] u
-                  WHERE 
-                	u.TBew_Nr LIKE @Number AND
-                	--u.TBew_DatDok > FromDate AND
-                	--u.TBew_DatDok < ToDate AND
-                	--"Fournisseur": string,
-                	--"Chantier": string,
-                	--IncludeConfirmed": boolean,
-                	TBew_Peri > '201901' AND 
-                	TBew_First = 1 AND 
-                	Tjrl_Cod = 'E01'` % company)
+                  FROM [WinBF1_`+company+`].[dbo].[vBew] u
+                  WHERE
+                  u.TBew_Nr LIKE @Number AND
+                  --u.TBew_DatDok > FromDate AND
+                  --u.TBew_DatDok < ToDate AND
+                  --"Fournisseur": string,
+                  --"Chantier": string,
+                  --IncludeConfirmed": boolean,
+                  TBew_Peri > '201901' AND
+                  TBew_First = 1 AND
+                  Tjrl_Cod = @Journal`)
         .then(result => {
             res.send(result.recordset);
         }).catch(err => {
             res.send(err);
+        })
+})
+
+app.get('/invoices', function (req, res) {
+    var company = req.query.company;
+    var journal = req.query.journal;
+    var numero = req.query.numero;
+    return app.pool.request()
+        .input('Company', sql.VarChar(10), company)
+        .input('Journal', sql.VarChar(10), journal)
+        .input('Number', sql.VarChar(10), numero)
+        .query(`SELECT TOP 10
+                '`+company+`' AS Company,
+                '`+journal+`' AS Journal,
+                u.TBew_Nr AS Number,
+                u.TBew_DatDok AS Date,
+                u.TBew_Peri AS Periode,
+                u.TLft_Cod AS Fournisseur,
+                (SELECT a.[TAna_Bez3] FROM [WinBF1_`+company+`].[dbo].[TAna] a WHERE a.[TAna_Cod] = (SELECT MAX(s.[TAna_Cod1]) FROM [WinBF1_`+company+`].[dbo].[vBew] s WHERE s.[TJrl_Cod] = u.[TJrl_Cod] AND s.[TBew_Nr] = u.[TBew_Nr])) AS Chantier,
+                (SELECT a.[TAna_Bez3] FROM [WinBF1_`+company+`].[dbo].[TAna] a WHERE a.[TAna_Cod] = (SELECT MAX(s.[TAna_Cod2]) FROM [WinBF1_`+company+`].[dbo].[vBew] s WHERE s.[TJrl_Cod] = u.[TJrl_Cod] AND s.[TBew_Nr] = u.[TBew_Nr])) AS Activite,
+                u.TBew_Mont AS Total,
+                u.TBew_BerYN AS IsPaid
+                FROM [WinBF1_`+company+`].[dbo].[vBew] u
+                WHERE
+                u.TBew_Nr = @Number AND
+                TBew_First = 1 AND
+                Tjrl_Cod = @Journal`)
+        .then(result => {
+            res.send(result.recordset);
+        }).catch(err => {
+            res.send(err);
+        })
+})
+
+app.get('/invoice_pdfs', function (req, res) {
+    var company = req.query.company;
+    var journal = req.query.journal;
+    var numero = req.query.numero;
+    return app.pool.request()
+        .input('Company', sql.VarChar(10), company)
+        .input('Journal', sql.VarChar(10), journal)
+        .input('Number', sql.VarChar(10), numero)
+        .query(`SELECT TOP 10
+                * FROM [ODS].[dbo].[ScanInDoc]
+                WHERE
+                Company = @Company AND
+                Journal = @Journal AND
+                Numero = @Number`)
+        .then(result => {
+            res.send(result.recordset);
+        }).catch(err => {
+            res.send(err);
+        })
+})
+
+app.patch('/invoice_change_chantier', function (req, res) {
+    var company = req.query.company;
+    var journal = req.query.journal;
+    var numero = req.query.numero;
+    var chantier_code = req.query.chantier_code;
+    return app.pool.request()
+        .input('Company', sql.VarChar(10), company)
+        .input('Journal', sql.VarChar(10), journal)
+        .input('Number', sql.VarChar(10), numero)
+        .input('ChantierCode', sql.VarChar(50), chantier_code)
+        .query(`UPDATE [WinBF1_`+company+`].[dbo].[vBew] SET TAna_Cod1 = @ChantierCode
+                    WHERE TJrl_Cod = @Journal AND TBew_Nr = @Number AND TTva_Cod IS NOT NULL`)
+        .then(result => {
+          res.send(result);
+        }).catch(err => {
+          res.send(err);
+        })
+})
+
+app.patch('/invoice_change_activite', function (req, res) {
+    var company = req.query.company;
+    var journal = req.query.journal;
+    var numero = req.query.numero;
+    var activite_code = req.query.activite_code;
+    return app.pool.request()
+        .input('Company', sql.VarChar(10), company)
+        .input('Journal', sql.VarChar(10), journal)
+        .input('Number', sql.VarChar(10), numero)
+        .input('ActiviteCode', sql.VarChar(50), activite_code)
+        .query(`UPDATE [WinBF1_`+company+`].[dbo].[vBew] SET TAna_Cod2 = @ActiviteCode
+                    WHERE TJrl_Cod = @Journal AND TBew_Nr = @Number AND TTva_Cod IS NOT NULL`)
+        .then(result => {
+          res.send(result);
+        }).catch(err => {
+          res.send(err);
         })
 })
 
@@ -320,32 +476,55 @@ app.get('/activites', function (req, res) {
 })
 
 app.get('/chantier_activites', function (req, res) {
+    var month = req.query.month;
     var chantier = req.query.chantier;
-    return app.pool.request()
-    .input('Chantier', sql.VarChar(50), chantier)
-    .query(`SELECT [ActiviteCode], [Activite]
-            	  ,SUM([hours]) AS Heures
-              FROM [ODS].[dbo].[HeuresOuvrierProj]
-              WHERE [type] = 'ANW' AND [Chantier] = @Chantier
-              GROUP BY [ActiviteCode], [Activite]`)
-    .then(result => {
-        result.recordset.forEach(line => {
-            line.Heures= Number(line.Heures.toFixed(2))
-        });
-        res.send(result.recordset);
-    }).catch(err => {
-        res.send(err);
-    })
+    if (month != 'all') {
+      return app.pool.request()
+      .input('Month', sql.VarChar(10), month)
+      .input('Chantier', sql.VarChar(50), chantier)
+      .query(`SELECT [ActiviteCode], [Activite]
+              	  ,SUM([hours]) AS Heures
+                FROM [ODS].[dbo].[HeuresOuvrierProj]
+                WHERE [type] = 'ANW' AND FORMAT(date,'yyyy-MM') = @Month
+                AND [Chantier] = @Chantier
+                GROUP BY [ActiviteCode], [Activite]`)
+      .then(result => {
+          result.recordset.forEach(line => {
+              line.Heures= Number(line.Heures.toFixed(2))
+          });
+          res.send(result.recordset);
+      }).catch(err => {
+          res.send(err);
+      })
+    } else {
+      return app.pool.request()
+      .input('Chantier', sql.VarChar(50), chantier)
+      .query(`SELECT [ActiviteCode], [Activite]
+              	  ,SUM([hours]) AS Heures
+                FROM [ODS].[dbo].[HeuresOuvrierProj]
+                WHERE [type] = 'ANW'
+                AND [Chantier] = @Chantier
+                GROUP BY [ActiviteCode], [Activite]`)
+      .then(result => {
+          result.recordset.forEach(line => {
+              line.Heures= Number(line.Heures.toFixed(2))
+          });
+          res.send(result.recordset);
+      }).catch(err => {
+          res.send(err);
+      })
+    }
 })
 
 app.get('/chantier_employes', function (req, res) {
+    var month = req.query.month;
     var chantier = req.query.chantier;
     return app.pool.request()
     .input('Chantier', sql.VarChar(50), chantier)
     .query(`SELECT employe_code AS EmployeCode, employe as [Employe]
             	  ,SUM([hours]) AS Heures
               FROM [ODS].[dbo].[HeuresOuvrierProj]
-              WHERE [type] = 'ANW' AND [Chantier] = 'BACK PETANGE'
+              WHERE [type] = 'ANW' AND [Chantier] = @Chantier
               GROUP BY employe_code, employe`)
     .then(result => {
         result.recordset.forEach(line => {
@@ -400,7 +579,7 @@ app.patch('/change_chantier', function (req, res) {
         }).catch(err => {
             res.send(err);
         })
-    } 
+    }
 })
 
 app.patch('/change_activite', function (req, res) {
